@@ -5,7 +5,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/patrickmn/go-cache/go-cache"
+	"github.com/patrickmn/go-cache"
 	"io/ioutil"
 	"net/http"
 	"net/http/cookiejar"
