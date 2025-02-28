@@ -1,0 +1,42 @@
+2025/02/28 07:23:57 解析到 4 个Cookie
+2025/02/28 07:23:57 Cookie 0: happyVoyagePersonal=PhY9qu5md+jR9M2kePMXU8SsyR+gleWu/KvOFWGsyH8oPeyGDR2j8cRu4vDJuT0T0xq1aogU3E4jkMgzCCvOZziPpg5ye+SpfSXgd9rGFCUee6kUpVENoWq3lXtVaMUQvLpTgg4wjbYSBxWxlcCBxz1OQmVCKb8q4dH566FrAOk=
+2025/02/28 07:23:57 Cookie 1: route=46100fc282b5137f0fdc1aea94c29ad6
+2025/02/28 07:23:57 Cookie 2: JSESSIONID=D8780819116D19086569F6FA4D4856B6
+2025/02/28 07:23:57 Cookie 3: semester.id=173
+2025/02/28 07:23:57 步骤1: 初始化会话
+2025/02/28 07:23:57 初始化请求:
+GET /eams/teach/grade/course/person.action HTTP/1.1
+Host: tam.nwupl.edu.cn
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7
+Accept-Language: zh-CN,zh;q=0.9
+Referer: https://tam.nwupl.edu.cn
+Sec-Ch-Ua: "Chromium";v="133", "Not(A:Brand";v="99"
+Sec-Ch-Ua-Mobile: ?0
+Sec-Ch-Ua-Platform: Windows
+Sec-Fetch-Dest: document
+Sec-Fetch-Mode: navigate
+Sec-Fetch-User: ?1
+Upgrade-Insecure-Requests: 1
+Accept-Encoding: gzip
+
+2025/02/28 07:23:59 初始化响应:
+HTTP/1.1 200 
+Transfer-Encoding: chunked
+Cache-Control: no-cache, no-store, max-age=0, must-revalidate
+Connection: keep-alive
+Content-Language: zh-CN
+Content-Type: text/html;charset=UTF-8
+Date: Fri, 28 Feb 2025 07:23:59 GMT
+Expires: 0
+Pragma: no-cache
+Server: wisedu
+Set-Cookie: route=f5109ec5ab7ffa10434a6c7ce410d47f; Path=/authserver
+Set-Cookie: JSESSIONID=91AC145B4565B7EA4F6938253CE28192; Path=/authserver; Secure; HttpOnly
+Strict-Transport-Security: max-age=15768000 ; includeSubDomains
+X-Content-Type-Options: nosniff
+X-Frame-Options: DENY
+X-Frame-Options: SAMEORIGIN
+X-Xss-Protection: 1; mode=block
+
+2025/02/28 07:23:59 重定向发生: https://tam.nwupl.edu.cn/eams/teach/grade/course/person.action -> https://authserver.nwupl.edu.cn/authserver/login?service=https%3A%2F%2Ftam.nwupl.edu.cn%2Feams%2Fteach%2Fgrade%2Fcourse%2Fperson.action

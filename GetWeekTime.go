@@ -3,7 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"math"
 	"net/http"
 	"strconv"
@@ -41,7 +41,7 @@ func GetWeekTimeOld(serverIP, startTime string) string {
 		fmt.Println(err)
 	}
 	defer res.Body.Close()
-	content, err := ioutil.ReadAll(res.Body)
+	content, err := io.ReadAll(res.Body)
 	if err != nil {
 		fmt.Println(err)
 	}

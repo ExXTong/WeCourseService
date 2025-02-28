@@ -1,7 +1,7 @@
 {
-	"SchoolName":"山东商业职业技术学院",
-	"MangerType":"supwisdom",
-	"MangerURL":"http://szyjxgl.sict.edu.cn:9000/",
-	"CalendarFirst":"2020-08-24",
-	"SocketPort":25565
+  "SchoolName": "西北政法大学",
+  "MangerType": "supwisdom",
+  "MangerURL": "https://tam.nwupl.edu.cn",
+  "SocketPort": 8080,
+  "CalendarFirst": "2025-02-24"
 }

@@ -1,17 +1,14 @@
 package main
 
 import (
-	"crypto/sha1"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
 	"regexp"
 	"strings"
-	"time"
 )
 
 type TeacherStruct struct {
@@ -21,144 +18,103 @@ type TeacherStruct struct {
 	CourseTeacher string
 }
 
-func GetTeacher(UserName, PassWord string) string {
-	// 获取用户名和密码
+func GetTeacher(cookieStr string) string {
+	// 配置读取
 	conf := ReadConfig()
-	USERNAME := UserName
-	PASSWORD := PassWord
 	var teachers []TeacherStruct
 	var myTeacher TeacherStruct
 	var teacherResult TeacherResult
-	// Cookie自动维护
-	cookieJar, err := cookiejar.New(nil)
+
+	teacherResult.Type = "teacher"
+
+	// 从字符串解析 cookie
+	cookies := parseCookieString(cookieStr)
+	if len(cookies) == 0 {
+		return getErrorResponse("teacher", "Cookie无效")
+	}
+
+	// 创建 HTTP 客户端
+	var client http.Client
+
+	// 设置 cookie jar
+	jar, err := cookiejar.New(nil)
 	if err != nil {
 		fmt.Println("ERROR_0: ", err.Error())
-		//return
-	}
-	var client http.Client
-	client.Jar = cookieJar
-	teacherResult.Type = "teacher"
-	// 第一次请求
-	req, err := http.NewRequest(http.MethodGet, conf.MangerURL+"eams/login.action", nil)
-	if err != nil {
-		fmt.Println("ERROR_1: ", err.Error())
-		//return
+		return getErrorResponse("teacher", "创建Cookie容器失败")
 	}
 
-	resp1, err := client.Do(req)
-	if err != nil {
-		fmt.Println("ERROR_2: ", err.Error())
-		//return
-	}
-	defer resp1.Body.Close()
+	// 将解析的cookies添加到jar中
+	u, _ := url.Parse(conf.MangerURL)
+	jar.SetCookies(u, cookies)
+	client.Jar = jar
 
-	content, err := ioutil.ReadAll(resp1.Body)
-	if err != nil {
-		fmt.Println("ERROR_3: ", err.Error())
-		//return
-	}
-
-	temp := string(content)
-	if !strings.Contains(temp, "CryptoJS.SHA1(") {
-		fmt.Println("ERROR_4: GET Failed")
-		//return
-	}
-
-	// 对密码进行SHA1哈希
-	temp = temp[strings.Index(temp, "CryptoJS.SHA1(")+15 : strings.Index(temp, "CryptoJS.SHA1(")+52]
-	PASSWORD = temp + PASSWORD
-	bytes := sha1.Sum([]byte(PASSWORD))
-	PASSWORD = hex.EncodeToString(bytes[:])
-	formValues := make(url.Values)
-	formValues.Set("username", USERNAME)
-	formValues.Set("password", PASSWORD)
-	formValues.Set("session_locale", "zh_CN")
-	time.Sleep(time.Duration(1000 * time.Millisecond))
-	req, err = http.NewRequest(http.MethodPost, conf.MangerURL+"eams/login.action", strings.NewReader(formValues.Encode()))
-	if err != nil {
-		fmt.Println("ERROR_5: ", err.Error())
-		//return
-	}
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	req.Header.Set("User-Agent", "Mozilla/5.0 (X11; Linux x86_64; rv:66.0) Gecko/20100101 Firefox/66.0")
-	resp2, err := client.Do(req)
-	if err != nil {
-		fmt.Println("ERROR_6: ", err.Error())
-		//return
-	}
-	defer resp2.Body.Close()
-
-	content, err = ioutil.ReadAll(resp2.Body)
-	if err != nil {
-		fmt.Println("ERROR_7: ", err.Error())
-		//return
-	}
-
-	temp = string(content)
-	if !strings.Contains(temp, "<a href=\"/eams/security/my.action\" target=\"_blank\" title=\"查看详情\" style=\"color:#ffffff\">") {
-		fmt.Println(temp)
-		fmt.Println("ERROR_8: LOGIN Failed")
-		//return
-	}
-	time.Sleep(1000 * time.Millisecond)
-	req, err = http.NewRequest(http.MethodGet, conf.MangerURL+"eams/courseTableForStd.action", nil)
+	// 直接请求课表页面
+	req, err := http.NewRequest(http.MethodGet, conf.MangerURL+"eams/courseTableForStd.action", nil)
 	if err != nil {
 		fmt.Println("ERROR_9: ", err.Error())
-		//return
+		return getErrorResponse("teacher", "创建请求失败")
 	}
+	req.Header.Set("User-Agent", "Mozilla/5.0 (X11; Linux x86_64; rv:66.0) Gecko/20100101 Firefox/66.0")
 
 	resp3, err := client.Do(req)
 	if err != nil {
 		fmt.Println("ERROR_10: ", err.Error())
-		//return
+		return getErrorResponse("teacher", "网络请求失败")
+	}
+	defer resp3.Body.Close()
+
+	// 检查是否重定向到登录页面(表示session已过期)
+	if strings.Contains(resp3.Request.URL.Path, "login.action") {
+		return getErrorResponse("teacher", "登录已过期，请重新登录")
 	}
 
-	defer resp3.Body.Close()
-	content, err = ioutil.ReadAll(resp3.Body)
+	content, err := io.ReadAll(resp3.Body)
 	if err != nil {
 		fmt.Println("ERROR_11: ", err.Error())
-		//return
+		return getErrorResponse("teacher", "读取响应失败")
 	}
 
-	temp = string(content)
+	temp := string(content)
 	if !strings.Contains(temp, "bg.form.addInput(form,\"ids\",\"") {
 		fmt.Println("ERROR_12: GET ids Failed")
-		//return
+		return getErrorResponse("teacher", "获取课程ID失败")
 	}
 
 	temp = temp[strings.Index(temp, "bg.form.addInput(form,\"ids\",\"")+29 : strings.Index(temp, "bg.form.addInput(form,\"ids\",\"")+50]
 	ids := temp[:strings.Index(temp, "\");")]
-	formValues = make(url.Values)
+
+	formValues := make(url.Values)
 	formValues.Set("ignoreHead", "1")
 	formValues.Set("showPrintAndExport", "1")
 	formValues.Set("setting.kind", "std")
 	formValues.Set("startWeek", "")
 	formValues.Set("semester.id", "30")
 	formValues.Set("ids", ids)
+
 	req, err = http.NewRequest(http.MethodPost, conf.MangerURL+"eams/courseTableForStd!courseTable.action", strings.NewReader(formValues.Encode()))
 	if err != nil {
 		fmt.Println("ERROR_13: ", err.Error())
-		//return
+		return getErrorResponse("teacher", "创建请求失败")
 	}
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.Header.Set("User-Agent", "Mozilla/5.0 (X11; Linux x86_64; rv:66.0) Gecko/20100101 Firefox/66.0")
 	resp4, err := client.Do(req)
 	if err != nil {
 		fmt.Println("ERROR_14: ", err.Error())
-		//return
+		return getErrorResponse("teacher", "网络请求失败")
 	}
 	defer resp4.Body.Close()
 
-	content, err = ioutil.ReadAll(resp4.Body)
+	content, err = io.ReadAll(resp4.Body)
 	if err != nil {
 		fmt.Println("ERROR_15: ", err.Error())
-		//return
+		return getErrorResponse("teacher", "读取响应失败")
 	}
 
 	temp = string(content)
 	if !strings.Contains(temp, "课表格式说明") {
 		fmt.Println("ERROR_16: Get Courses Failed")
-		//return
+		return getErrorResponse("teacher", "获取课程失败")
 	}
 	reg3 := regexp.MustCompile(`(?i)<td>(\d)</td>\s*<td>([:alpha:].+)</td>\s*<td>(.+)</td>\s*<td>((\d)|(\d\.\d))</td>\s*<td>\s*<a href=.*\s.*\s.*\s.*>.*</a>\s*</td>\s*<td>(.*)</td>`)
 	reg4 := regexp.MustCompile(`(?i)<td>([^>]*)</td>`)
@@ -176,17 +132,20 @@ func GetTeacher(UserName, PassWord string) string {
 	req, err = http.NewRequest(http.MethodGet, conf.MangerURL+"eams/logout.action", nil)
 	if err != nil {
 		fmt.Println("ERROR_17: ", err.Error())
-		//return
+		return getErrorResponse("teacher", "创建请求失败")
 	}
 
 	resp5, err := client.Do(req)
 	if err != nil {
 		fmt.Println("ERROR_18: ", err.Error())
-		//return
+		return getErrorResponse("teacher", "网络请求失败")
 	}
 	defer resp5.Body.Close()
 	teacherResult.Data = teachers
 	js, err := json.MarshalIndent(teacherResult, "", "\t")
+	if err != nil {
+		fmt.Println("JSON序列化失败:", err.Error())
+		return getErrorResponse("teacher", "生成JSON失败")
+	}
 	return B2S(js)
-
 }
